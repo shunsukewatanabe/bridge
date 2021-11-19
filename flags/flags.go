@@ -16,7 +16,7 @@ var (
 )
 
 func BindFlags(rootCMD *cobra.Command) {
-	rootCMD.PersistentFlags().String(ConfigFlagName, ".", "Path to JSON configuration files directory")
+	rootCMD.PersistentFlags().String(ConfigFlagName, "", "Path to JSON configuration file")
 	_ = viper.BindPFlag(ConfigFlagName, rootCMD.PersistentFlags().Lookup(ConfigFlagName))
 
 	rootCMD.PersistentFlags().String(BlockstoreFlagName, "./lvldbdata", "Specify path for blockstore")
