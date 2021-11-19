@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/consts"
+	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/keystore"
 
@@ -79,17 +80,18 @@ func NewEVMClientFromParams(url string, privateKey *ecdsa.PrivateKey) (*EVMClien
 	return c, nil
 }
 
-func (c *EVMClient) Configurate(cfg *EVMConfig) error {
-	generalConfig := cfg.SharedEVMConfig.GeneralChainConfig
+func (c *EVMClient) Configurate(cfg *chain.EVMConfig) error {
+	generalConfig := cfg.GeneralChainConfig
 
 	kp, err := keystore.KeypairFromAddress(generalConfig.From, keystore.EthChain, generalConfig.KeystorePath, generalConfig.Insecure)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	krp := kp.(*secp256k1.Keypair)
 	c.kp = krp
 
 	log.Info().Str("url", generalConfig.Endpoint).Msg("Connecting to evm chain...")
+
 	rpcClient, err := rpc.DialContext(context.TODO(), generalConfig.Endpoint)
 	if err != nil {
 		return err
