@@ -18,7 +18,7 @@ type EVMConfig struct {
 	GasMultiplier      *big.Float
 	GasLimit           *big.Int
 	StartBlock         *big.Int
-	BlockConfirmations *big.Int
+	BlockConfirmations uint8
 }
 
 type RawEVMConfig struct {
@@ -31,7 +31,7 @@ type RawEVMConfig struct {
 	GasMultiplier      float64 `mapstructure:"gasMultiplier"`
 	GasLimit           int64   `mapstructure:"gasLimit"`
 	StartBlock         int64   `mapstructure:"startBlock"`
-	BlockConfirmations int64   `mapstructure:"blockConfirmations"`
+	BlockConfirmations uint8   `mapstructure:"blockConfirmations"`
 }
 
 func (c *RawEVMConfig) Validate() error {
@@ -71,7 +71,7 @@ func GetEVMConfig(chainConfig map[string]interface{}) (*EVMConfig, error) {
 		MaxGasPrice:        big.NewInt(consts.DefaultGasPrice),
 		GasMultiplier:      big.NewFloat(consts.DefaultGasMultiplier),
 		StartBlock:         big.NewInt(c.StartBlock),
-		BlockConfirmations: big.NewInt(consts.DefaultBlockConfirmations),
+		BlockConfirmations: consts.DefaultBlockConfirmations,
 	}
 
 	if c.Bridge != "" {
@@ -93,7 +93,7 @@ func GetEVMConfig(chainConfig map[string]interface{}) (*EVMConfig, error) {
 	}
 
 	if c.BlockConfirmations != 0 {
-		config.BlockConfirmations = big.NewInt(c.BlockConfirmations)
+		config.BlockConfirmations = c.BlockConfirmations
 	}
 
 	return config, nil

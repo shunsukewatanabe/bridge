@@ -4,6 +4,7 @@
 package app
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,7 +20,7 @@ import (
 )
 
 func Run() error {
-	configuration, err := config.GetConfig(flags.ConfigFlagName)
+	configuration, err := config.GetConfig(viper.GetString(flags.ConfigFlagName))
 	if err != nil {
 		panic(err)
 	}
@@ -46,7 +47,9 @@ func Run() error {
 
 				chains = append(chains, chain)
 			}
-		default: panic(fmt.Errorf("Type '%s' not recognized", chainConfig["type"]))
+		default:
+			panic(fmt.Errorf("Type '%s' not recognized", chainConfig["type"]))
+		}
 	}
 
 	r := relayer.NewRelayer(

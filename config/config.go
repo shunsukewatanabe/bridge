@@ -16,6 +16,8 @@ func GetConfig(path string) (Config, error) {
 	config := Config{}
 
 	viper.SetConfigFile(path)
+	viper.SetConfigType("json")
+
 	err := viper.ReadInConfig()
 	if err != nil {
 		return config, err
@@ -32,7 +34,7 @@ func GetConfig(path string) (Config, error) {
 	}
 	for _, chain := range config.ChainConfigs {
 		if chain["type"] == "" || chain["type"] == nil {
-			return config, fmt.Errorf("Chain 'type0 must be provided for every configured chain")
+			return config, fmt.Errorf("Chain 'type' must be provided for every configured chain")
 		}
 	}
 
