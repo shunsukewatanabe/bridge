@@ -30,7 +30,7 @@ import (
 type EVMClient struct {
 	*ethclient.Client
 	rpClient  *rpc.Client
-	config    *EVMConfig
+	kp        *secp256k1.Keypair
 	nonce     *big.Int
 	nonceLock sync.Mutex
 }
@@ -75,21 +75,11 @@ func NewEVMClientFromParams(url string, privateKey *ecdsa.PrivateKey) (*EVMClien
 	c := &EVMClient{}
 	c.Client = ethclient.NewClient(rpcClient)
 	c.rpClient = rpcClient
-	c.config = &EVMConfig{}
-	c.config.kp = kp
+	c.kp = kp
 	return c, nil
 }
 
-func (c *EVMClient) Configurate(path string, name string) error {
-	rawCfg, err := GetConfig(path, name)
-	if err != nil {
-		return err
-	}
-	cfg, err := ParseConfig(rawCfg)
-	if err != nil {
-		return err
-	}
-	c.config = cfg
+func (c *EVMClient) Configurate(cfg *EVMConfig) error {
 	generalConfig := cfg.SharedEVMConfig.GeneralChainConfig
 
 	kp, err := keystore.KeypairFromAddress(generalConfig.From, keystore.EthChain, generalConfig.KeystorePath, generalConfig.Insecure)
@@ -97,7 +87,7 @@ func (c *EVMClient) Configurate(path string, name string) error {
 		panic(err)
 	}
 	krp := kp.(*secp256k1.Keypair)
-	c.config.kp = krp
+	c.kp = krp
 
 	log.Info().Str("url", generalConfig.Endpoint).Msg("Connecting to evm chain...")
 	rpcClient, err := rpc.DialContext(context.TODO(), generalConfig.Endpoint)
@@ -107,32 +97,6 @@ func (c *EVMClient) Configurate(path string, name string) error {
 	c.Client = ethclient.NewClient(rpcClient)
 	c.rpClient = rpcClient
 
-	if generalConfig.LatestBlock {
-		curr, err := c.LatestBlock()
-		if err != nil {
-			return err
-		}
-		cfg.SharedEVMConfig.StartBlock = curr
-	}
-	return nil
-}
-
-type headerNumber struct {
-	Number *big.Int `json:"number"           gencodec:"required"`
-}
-
-func (h *headerNumber) UnmarshalJSON(input []byte) error {
-	type headerNumber struct {
-		Number *hexutil.Big `json:"number" gencodec:"required"`
-	}
-	var dec headerNumber
-	if err := json.Unmarshal(input, &dec); err != nil {
-		return err
-	}
-	if dec.Number == nil {
-		return errors.New("missing required field 'number' for Header")
-	}
-	h.Number = (*big.Int)(dec.Number)
 	return nil
 }
 
@@ -251,7 +215,7 @@ func (c *EVMClient) PendingCallContract(ctx context.Context, callArgs map[string
 }
 
 func (c *EVMClient) From() common.Address {
-	return c.config.kp.CommonAddress()
+	return c.kp.CommonAddress()
 }
 
 func (c *EVMClient) SignAndSendTransaction(ctx context.Context, tx CommonTransaction) (common.Hash, error) {
@@ -261,7 +225,7 @@ func (c *EVMClient) SignAndSendTransaction(ctx context.Context, tx CommonTransac
 		// Probably chain does not support chainID eg. CELO
 		id = nil
 	}
-	rawTx, err := tx.RawWithSignature(c.config.kp.PrivateKey(), id)
+	rawTx, err := tx.RawWithSignature(c.kp.PrivateKey(), id)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -273,7 +237,7 @@ func (c *EVMClient) SignAndSendTransaction(ctx context.Context, tx CommonTransac
 }
 
 func (c *EVMClient) RelayerAddress() common.Address {
-	return c.config.kp.CommonAddress()
+	return c.kp.CommonAddress()
 }
 
 func (c *EVMClient) LockNonce() {
@@ -288,7 +252,7 @@ func (c *EVMClient) UnsafeNonce() (*big.Int, error) {
 	var err error
 	for i := 0; i <= 10; i++ {
 		if c.nonce == nil {
-			nonce, err := c.PendingNonceAt(context.Background(), c.config.kp.CommonAddress())
+			nonce, err := c.PendingNonceAt(context.Background(), c.kp.CommonAddress())
 			if err != nil {
 				time.Sleep(1 * time.Second)
 				continue
@@ -318,11 +282,23 @@ func (c *EVMClient) BaseFee() (*big.Int, error) {
 	return head.BaseFee, nil
 }
 
-func toBlockNumArg(number *big.Int) string {
-	if number == nil {
-		return "latest"
+type headerNumber struct {
+	Number *big.Int `json:"number"           gencodec:"required"`
+}
+
+func (h *headerNumber) UnmarshalJSON(input []byte) error {
+	type headerNumber struct {
+		Number *hexutil.Big `json:"number" gencodec:"required"`
 	}
-	return hexutil.EncodeBig(number)
+	var dec headerNumber
+	if err := json.Unmarshal(input, &dec); err != nil {
+		return err
+	}
+	if dec.Number == nil {
+		return errors.New("missing required field 'number' for Header")
+	}
+	h.Number = (*big.Int)(dec.Number)
+	return nil
 }
 
 // buildQuery constructs a query for the bridgeContract by hashing sig to get the event topic
@@ -338,6 +314,9 @@ func buildQuery(contract common.Address, sig string, startBlock *big.Int, endBlo
 	return query
 }
 
-func (c *EVMClient) GetConfig() *EVMConfig {
-	return c.config
+func toBlockNumArg(number *big.Int) string {
+	if number == nil {
+		return "latest"
+	}
+	return hexutil.EncodeBig(number)
 }
