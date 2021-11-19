@@ -54,18 +54,18 @@ func SetupEVMChain(config *chain.EVMConfig, db blockstore.KeyValueReaderWriter) 
 	eventHandler := listener.NewETHEventHandler(common.HexToAddress(config.Bridge), client)
 	eventHandler.RegisterEventHandler(config.Erc20Handler, listener.Erc20EventHandler)
 	eventHandler.RegisterEventHandler(config.GenericHandler, listener.GenericEventHandler)
-	evm1Listener := listener.NewEVMListener(client, eventHandler, common.HexToAddress(config.Bridge))
+	evmListener := listener.NewEVMListener(client, eventHandler, common.HexToAddress(config.Bridge))
 
 	mh := voter.NewEVMMessageHandler(client, common.HexToAddress(config.Bridge))
 	mh.RegisterMessageHandler(common.HexToAddress(config.Erc20Handler), voter.ERC20MessageHandler)
 	mh.RegisterMessageHandler(common.HexToAddress(config.GenericHandler), voter.GenericMessageHandler)
 	evmVoter := voter.NewVoter(mh, client, evmtransaction.NewTransaction, evmgaspricer.NewLondonGasPriceClient(client, nil))
 
-	return NewEVMChain(evm1Listener, evmVoter, db, config), nil
+	return NewEVMChain(evmListener, evmVoter, db, config), nil
 }
 
-func NewEVMChain(dr EventListener, writer ProposalVoter, kvdb blockstore.KeyValueReaderWriter, config *chain.EVMConfig) *EVMChain {
-	return &EVMChain{listener: dr, writer: writer, kvdb: kvdb, config: config}
+func NewEVMChain(listener EventListener, writer ProposalVoter, kvdb blockstore.KeyValueReaderWriter, config *chain.EVMConfig) *EVMChain {
+	return &EVMChain{listener: listener, writer: writer, kvdb: kvdb, config: config}
 }
 
 // PollEvents is the goroutine that polls blocks and searches Deposit events in them.
