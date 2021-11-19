@@ -47,5 +47,4 @@ func (c *GeneralChainConfig) ParseConfig() {
 	c.BlockstorePath = viper.GetString(flags.BlockstoreFlagName)
 	c.FreshStart = viper.GetBool(flags.FreshStartFlagName)
 	c.LatestBlock = viper.GetBool(flags.LatestBlockFlagName)
-
 }

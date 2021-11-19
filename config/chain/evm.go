@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/consts"
+	"github.com/mitchellh/mapstructure"
 )
 
 type EVMConfig struct {
@@ -43,8 +44,23 @@ func (c *RawEVMConfig) Validate() error {
 	return nil
 }
 
-func (c *RawEVMConfig) ParseConfig() (*EVMConfig, error) {
+func GetEVMConfig(chainConfig map[string]interface{}) (*EVMConfig, error) {
+	var c RawEVMConfig
+	err := mapstructure.Decode(chainConfig, &c)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	c.GeneralChainConfig.ParseConfig()
+	err = c.GeneralChainConfig.Validate()
+	if err != nil {
+		return nil, err
+	}
 
 	config := &EVMConfig{
 		GeneralChainConfig: c.GeneralChainConfig,
