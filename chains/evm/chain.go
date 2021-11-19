@@ -32,39 +32,39 @@ type EVMChain struct {
 	listener EventListener // Rename
 	writer   ProposalVoter
 	kvdb     blockstore.KeyValueReaderWriter
-	config   *chain.SharedEVMConfig
+	config   *chain.EVMConfig
 }
 
-func SetupEVMChain(config *evmclient.EVMConfig, db blockstore.KeyValueReaderWriter) (*EVMChain, error) {
+func SetupEVMChain(config *chain.EVMConfig, db blockstore.KeyValueReaderWriter) (*EVMChain, error) {
 	client := evmclient.NewEVMClient()
 	err := client.Configurate(config)
 	if err != nil {
 		return nil, err
 	}
 
-	if config.SharedEVMConfig.GeneralChainConfig.LatestBlock {
+	if config.GeneralChainConfig.LatestBlock {
 		latestBlock, err := client.LatestBlock()
 		if err != nil {
 			return nil, err
 		}
 
-		config.SharedEVMConfig.StartBlock = latestBlock
+		config.StartBlock = latestBlock
 	}
 
-	eventHandler := listener.NewETHEventHandler(common.HexToAddress(config.SharedEVMConfig.Bridge), client)
-	eventHandler.RegisterEventHandler(config.SharedEVMConfig.Erc20Handler, listener.Erc20EventHandler)
-	eventHandler.RegisterEventHandler(config.SharedEVMConfig.GenericHandler, listener.GenericEventHandler)
-	evm1Listener := listener.NewEVMListener(client, eventHandler, common.HexToAddress(config.SharedEVMConfig.Bridge))
+	eventHandler := listener.NewETHEventHandler(common.HexToAddress(config.Bridge), client)
+	eventHandler.RegisterEventHandler(config.Erc20Handler, listener.Erc20EventHandler)
+	eventHandler.RegisterEventHandler(config.GenericHandler, listener.GenericEventHandler)
+	evm1Listener := listener.NewEVMListener(client, eventHandler, common.HexToAddress(config.Bridge))
 
-	mh := voter.NewEVMMessageHandler(client, common.HexToAddress(config.SharedEVMConfig.Bridge))
-	mh.RegisterMessageHandler(common.HexToAddress(config.SharedEVMConfig.Erc20Handler), voter.ERC20MessageHandler)
-	mh.RegisterMessageHandler(common.HexToAddress(config.SharedEVMConfig.GenericHandler), voter.GenericMessageHandler)
+	mh := voter.NewEVMMessageHandler(client, common.HexToAddress(config.Bridge))
+	mh.RegisterMessageHandler(common.HexToAddress(config.Erc20Handler), voter.ERC20MessageHandler)
+	mh.RegisterMessageHandler(common.HexToAddress(config.GenericHandler), voter.GenericMessageHandler)
 	evmVoter := voter.NewVoter(mh, client, evmtransaction.NewTransaction, evmgaspricer.NewLondonGasPriceClient(client, nil))
 
-	return NewEVMChain(evm1Listener, evmVoter, db, &config.SharedEVMConfig), nil
+	return NewEVMChain(evm1Listener, evmVoter, db, config), nil
 }
 
-func NewEVMChain(dr EventListener, writer ProposalVoter, kvdb blockstore.KeyValueReaderWriter, config *chain.SharedEVMConfig) *EVMChain {
+func NewEVMChain(dr EventListener, writer ProposalVoter, kvdb blockstore.KeyValueReaderWriter, config *chain.EVMConfig) *EVMChain {
 	return &EVMChain{listener: dr, writer: writer, kvdb: kvdb, config: config}
 }
 

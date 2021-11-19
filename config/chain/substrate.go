@@ -4,22 +4,22 @@ import (
 	"math/big"
 )
 
-type SharedSubstrateConfig struct {
+type SubstrateConfig struct {
 	GeneralChainConfig GeneralChainConfig
 	StartBlock         *big.Int
 	UseExtendedCall    bool
 }
 
-type RawSharedSubstrateConfig struct {
+type RawSubstrateConfig struct {
 	GeneralChainConfig `mapstructure:",squash"`
 	StartBlock         int64 `mapstructure:"startBlock"`
 	UseExtendedCall    bool  `mapstructure:"useExtendedCall"`
 }
 
-func (c *RawSharedSubstrateConfig) ParseConfig() *SharedSubstrateConfig {
+func (c *RawSubstrateConfig) ParseConfig() *SubstrateConfig {
 	c.GeneralChainConfig.ParseConfig()
 
-	config := &SharedSubstrateConfig{
+	config := &SubstrateConfig{
 		GeneralChainConfig: c.GeneralChainConfig,
 		StartBlock:         big.NewInt(c.StartBlock),
 		UseExtendedCall:    c.UseExtendedCall,

@@ -7,7 +7,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/consts"
 )
 
-type SharedEVMConfig struct {
+type EVMConfig struct {
 	GeneralChainConfig GeneralChainConfig
 	Bridge             string
 	Erc20Handler       string
@@ -20,7 +20,7 @@ type SharedEVMConfig struct {
 	BlockConfirmations *big.Int
 }
 
-type RawSharedEVMConfig struct {
+type RawEVMConfig struct {
 	GeneralChainConfig `mapstructure:",squash"`
 	Bridge             string  `mapstructure:"bridge"`
 	Erc20Handler       string  `mapstructure:"erc20Handler"`
@@ -33,7 +33,7 @@ type RawSharedEVMConfig struct {
 	BlockConfirmations int64   `mapstructure:"blockConfirmations"`
 }
 
-func (c *RawSharedEVMConfig) Validate() error {
+func (c *RawEVMConfig) Validate() error {
 	if err := c.GeneralChainConfig.Validate(); err != nil {
 		return err
 	}
@@ -43,10 +43,10 @@ func (c *RawSharedEVMConfig) Validate() error {
 	return nil
 }
 
-func (c *RawSharedEVMConfig) ParseConfig() (*SharedEVMConfig, error) {
+func (c *RawEVMConfig) ParseConfig() (*EVMConfig, error) {
 	c.GeneralChainConfig.ParseConfig()
 
-	config := &SharedEVMConfig{
+	config := &EVMConfig{
 		GeneralChainConfig: c.GeneralChainConfig,
 		Erc20Handler:       c.Erc20Handler,
 		Erc721Handler:      c.Erc721Handler,

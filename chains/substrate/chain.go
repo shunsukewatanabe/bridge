@@ -24,10 +24,10 @@ type SubstrateChain struct {
 	listener EventListener
 	writer   ProposalVoter
 	kvdb     blockstore.KeyValueReaderWriter
-	config   *chain.SharedSubstrateConfig
+	config   *chain.SubstrateConfig
 }
 
-func NewSubstrateChain(listener EventListener, writer ProposalVoter, kvdb blockstore.KeyValueReaderWriter, domainID uint8, config *chain.SharedSubstrateConfig) *SubstrateChain {
+func NewSubstrateChain(listener EventListener, writer ProposalVoter, kvdb blockstore.KeyValueReaderWriter, domainID uint8, config *chain.SubstrateConfig) *SubstrateChain {
 	return &SubstrateChain{
 		listener: listener,
 		writer:   writer,
