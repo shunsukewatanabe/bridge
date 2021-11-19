@@ -40,7 +40,7 @@ func Run() error {
 					panic(err)
 				}
 
-				chain, err := evm.SetupEVMChain(config, db)
+				chain, err := evm.SetupDefaultEVMChain(config, db)
 				if err != nil {
 					panic(err)
 				}
