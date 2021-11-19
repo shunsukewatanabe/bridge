@@ -8,8 +8,14 @@ import (
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/blockstore"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/evmclient"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/evmgaspricer"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/evmtransaction"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/voter"
 	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/relayer"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
 )
 
@@ -25,25 +31,60 @@ type ProposalVoter interface {
 type EVMChain struct {
 	listener EventListener // Rename
 	writer   ProposalVoter
-	domainID uint8
 	kvdb     blockstore.KeyValueReaderWriter
 	config   *chain.SharedEVMConfig
 }
 
-func NewEVMChain(dr EventListener, writer ProposalVoter, kvdb blockstore.KeyValueReaderWriter, domainID uint8, config *chain.SharedEVMConfig) *EVMChain {
-	return &EVMChain{listener: dr, writer: writer, kvdb: kvdb, domainID: domainID, config: config}
+func SetupEVMChain(config *evmclient.EVMConfig, db blockstore.KeyValueReaderWriter) (*EVMChain, error) {
+	client := evmclient.NewEVMClient()
+	err := client.Configurate(config)
+	if err != nil {
+		return nil, err
+	}
+
+	if config.SharedEVMConfig.GeneralChainConfig.LatestBlock {
+		latestBlock, err := client.LatestBlock()
+		if err != nil {
+			return nil, err
+		}
+
+		config.SharedEVMConfig.StartBlock = latestBlock
+	}
+
+	eventHandler := listener.NewETHEventHandler(common.HexToAddress(config.SharedEVMConfig.Bridge), client)
+	eventHandler.RegisterEventHandler(config.SharedEVMConfig.Erc20Handler, listener.Erc20EventHandler)
+	eventHandler.RegisterEventHandler(config.SharedEVMConfig.GenericHandler, listener.GenericEventHandler)
+	evm1Listener := listener.NewEVMListener(client, eventHandler, common.HexToAddress(config.SharedEVMConfig.Bridge))
+
+	mh := voter.NewEVMMessageHandler(client, common.HexToAddress(config.SharedEVMConfig.Bridge))
+	mh.RegisterMessageHandler(common.HexToAddress(config.SharedEVMConfig.Erc20Handler), voter.ERC20MessageHandler)
+	mh.RegisterMessageHandler(common.HexToAddress(config.SharedEVMConfig.GenericHandler), voter.GenericMessageHandler)
+	evmVoter := voter.NewVoter(mh, client, evmtransaction.NewTransaction, evmgaspricer.NewLondonGasPriceClient(client, nil))
+
+	return NewEVMChain(evm1Listener, evmVoter, db, &config.SharedEVMConfig), nil
 }
 
-// PollEvents is the goroutine that polling blocks and searching Deposit Events in them. Event then sent to eventsChan
+func NewEVMChain(dr EventListener, writer ProposalVoter, kvdb blockstore.KeyValueReaderWriter, config *chain.SharedEVMConfig) *EVMChain {
+	return &EVMChain{listener: dr, writer: writer, kvdb: kvdb, config: config}
+}
+
+// PollEvents is the goroutine that polls blocks and searches Deposit events in them.
+// Events are then sent to eventsChan.
 func (c *EVMChain) PollEvents(stop <-chan struct{}, sysErr chan<- error, eventsChan chan *relayer.Message) {
 	log.Info().Msg("Polling Blocks...")
-	// Handler chain specific configs and flags
-	block, err := blockstore.SetupBlockstore(&c.config.GeneralChainConfig, c.kvdb, c.config.StartBlock)
+
+	block, err := blockstore.GetStartingBlock(
+		c.kvdb,
+		*c.config.GeneralChainConfig.Id,
+		c.config.StartBlock,
+		c.config.GeneralChainConfig.FreshStart,
+	)
 	if err != nil {
 		sysErr <- fmt.Errorf("error %w on getting last stored block", err)
 		return
 	}
-	ech := c.listener.ListenToEvents(block, c.domainID, c.kvdb, stop, sysErr)
+
+	ech := c.listener.ListenToEvents(block, *c.config.GeneralChainConfig.Id, c.kvdb, stop, sysErr)
 	for {
 		select {
 		case <-stop:
@@ -61,5 +102,5 @@ func (c *EVMChain) Write(msg *relayer.Message) error {
 }
 
 func (c *EVMChain) DomainID() uint8 {
-	return c.domainID
+	return *c.config.GeneralChainConfig.Id
 }
