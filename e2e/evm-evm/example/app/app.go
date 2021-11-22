@@ -11,7 +11,6 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm"
 	"github.com/ChainSafe/chainbridge-core/config"
-	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 	"github.com/ChainSafe/chainbridge-core/relayer"
@@ -35,12 +34,7 @@ func Run() error {
 		switch chainConfig["type"] {
 		case "evm":
 			{
-				config, err := chain.GetEVMConfig(chainConfig)
-				if err != nil {
-					panic(err)
-				}
-
-				chain, err := evm.SetupDefaultEVMChain(config, db)
+				chain, err := evm.SetupDefaultEVMChain(chainConfig, db)
 				if err != nil {
 					panic(err)
 				}
