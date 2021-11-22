@@ -37,7 +37,7 @@ func (c *GeneralChainConfig) Validate() error {
 	return nil
 }
 
-func (c *GeneralChainConfig) ParseConfig() {
+func (c *GeneralChainConfig) ParseFlags() {
 	if path := viper.GetString(flags.TestKeyFlagName); path != "" {
 		c.KeystorePath = path
 		c.Insecure = true

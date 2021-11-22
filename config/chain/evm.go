@@ -44,7 +44,7 @@ func (c *RawEVMConfig) Validate() error {
 	return nil
 }
 
-func GetEVMConfig(chainConfig map[string]interface{}) (*EVMConfig, error) {
+func NewEVMConfig(chainConfig map[string]interface{}) (*EVMConfig, error) {
 	var c RawEVMConfig
 	err := mapstructure.Decode(chainConfig, &c)
 	if err != nil {
@@ -56,12 +56,7 @@ func GetEVMConfig(chainConfig map[string]interface{}) (*EVMConfig, error) {
 		return nil, err
 	}
 
-	c.GeneralChainConfig.ParseConfig()
-	err = c.GeneralChainConfig.Validate()
-	if err != nil {
-		return nil, err
-	}
-
+	c.GeneralChainConfig.ParseFlags()
 	config := &EVMConfig{
 		GeneralChainConfig: c.GeneralChainConfig,
 		Erc20Handler:       c.Erc20Handler,

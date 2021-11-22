@@ -2,6 +2,8 @@ package chain
 
 import (
 	"math/big"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type SubstrateConfig struct {
@@ -16,13 +18,24 @@ type RawSubstrateConfig struct {
 	UseExtendedCall    bool  `mapstructure:"useExtendedCall"`
 }
 
-func (c *RawSubstrateConfig) ParseConfig() *SubstrateConfig {
-	c.GeneralChainConfig.ParseConfig()
+func NewSubstrateConfig(chainCOnfig map[string]interface{}) (*SubstrateConfig, error) {
+	var c RawSubstrateConfig
+	err := mapstructure.Decode(chainCOnfig, &c)
+	if err != nil {
+		return nil, err
+	}
 
+	err = c.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	c.GeneralChainConfig.ParseFlags()
 	config := &SubstrateConfig{
 		GeneralChainConfig: c.GeneralChainConfig,
 		StartBlock:         big.NewInt(c.StartBlock),
 		UseExtendedCall:    c.UseExtendedCall,
 	}
-	return config
+
+	return config, nil
 }

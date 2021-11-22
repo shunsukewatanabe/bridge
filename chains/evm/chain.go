@@ -37,7 +37,7 @@ type EVMChain struct {
 
 // SetupDefaultEVMChain sets up an EVMChain with all supported handlers configured
 func SetupDefaultEVMChain(rawConfig map[string]interface{}, db blockstore.KeyValueReaderWriter) (*EVMChain, error) {
-	config, err := chain.GetEVMConfig(rawConfig)
+	config, err := chain.NewEVMConfig(rawConfig)
 	if err != nil {
 		return nil, err
 	}
