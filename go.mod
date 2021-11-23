@@ -1,13 +1,14 @@
-module github.com/ChainSafe/chainbridge-core
+module github.com/shunsukewatanabe/bridge
 
 go 1.17
 
 require (
+	github.com/ChainSafe/chainbridge-core v0.0.0-20211122195214-8e67f6136b2d
 	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible
 	github.com/ethereum/go-ethereum v1.10.12
 	github.com/golang/mock v1.6.0
 	github.com/pkg/errors v0.9.1
-	github.com/rs/zerolog v1.25.0
+	github.com/rs/zerolog v1.26.0
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.9.0

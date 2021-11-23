@@ -32,7 +32,7 @@ The chainbridge-core-example currently supports two modules:
 ## Usage
 Since chainbridge-core is the modular framework it will require writing some code to get it running. Here you can find some examples
 
-[Example](https://github.com/ChainSafe/chainbridge-core-example)
+[Example](https://github.com/shunsukewatanabe/bridge/chainbridge-core-example)
 
 &nbsp;
 
@@ -996,7 +996,7 @@ Flags:
   -h, --help   help for local-setup
 ```
 
-This can be easily run by building the [chainbridge-core-example](https://github.com/ChainSafe/chainbridge-core-example) app, or by issuing a `Makefile` instruction directly from the root of the [chainbridge-core](https://github.com/ChainSafe/chainbridge-core) itself.
+This can be easily run by building the [chainbridge-core-example](https://github.com/shunsukewatanabe/bridge/chainbridge-core-example) app, or by issuing a `Makefile` instruction directly from the root of the [chainbridge-core](https://github.com/shunsukewatanabe/bridge/chainbridge-core) itself.
 ```bash
 make local-setup
 ```
